@@ -21,6 +21,10 @@ struct FlagImage: View {
 struct ContentView: View {
     @State private var showingScore = false
     @State private var showingFinalScore = false
+    
+    @State private var rotationAmount = 0.0
+    @State private var selectedFlag: Int?
+    
     @State private var scoreTitle = ""
     @State private var score = 0
     @State private var questionCount = 0
@@ -56,10 +60,15 @@ struct ContentView: View {
                     ForEach(0..<3) { number in
                         Button {
                             flagTapped(number)
+                            withAnimation {
+                                rotationAmount += 360
+                            }
                         } label: {
                             FlagImage(country: countries[number])
                         }
-                    }
+                        .rotation3DEffect(.degrees(number == selectedFlag ? rotationAmount : -rotationAmount), axis: (x: 0, y: 1, z: 0))
+                        .opacity(selectedFlag != nil && number != selectedFlag ? 0.5 : 1.0)
+                        }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 20)
@@ -94,6 +103,7 @@ struct ContentView: View {
     
     func flagTapped(_ number: Int) {
         questionCount += 1
+        selectedFlag = number
         if number == correctAnswer {
             scoreTitle = "Correct"
             score += 1
@@ -102,20 +112,26 @@ struct ContentView: View {
         }
         
         if questionCount >= questionLimit {
-            showingFinalScore = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.65) {
+                showingFinalScore = true
+            }
         } else {
-            showingScore = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.65) {
+                showingScore = true
+            }
         }
     }
     
     func askQuestion() {
         countries.shuffle()
         correctAnswer = Int.random(in: 0...2)
+        selectedFlag = nil
     }
     
     func reset() {
         score = 0
         questionCount = 0
+        selectedFlag = nil
         countries.shuffle()
     }
 }
